@@ -729,7 +729,7 @@ NChannelSetToMethyLumiSet2 <- function(
 
 # {{{ methylumIDATepic
 methylumIDATepic <- function(barcodes = NULL, pdat = NULL, parallel = F, n = F, n.sd = F,
-    oob = T, idatPath = getwd(), force = F, tw=TRUE, ...) {
+    oob = T, idatPath = getwd(), force = F, tw=TRUE, custom_manifest = NULL, ...) {
     if (is(barcodes, "data.frame"))
         pdat = barcodes
     if ((is.null(barcodes)) & (is.null(pdat) | (!("barcode" %in% names(pdat)))))
@@ -771,7 +771,7 @@ methylumIDATepic <- function(barcodes = NULL, pdat = NULL, parallel = F, n = F, 
     stopifnot(all(files.present)) 
 
     mats <- IDATsToMatrices2(barcodes, parallel = parallel, idatPath = idatPath)
-    dats <- DataToNChannelSet2(mats, IDAT = T, parallel = parallel, force = force)
+    dats <- DataToNChannelSet2(mats, IDAT = T, parallel = parallel, force = force, custom_manifest = custom_manifest)
     mlumi <- NChannelSetToMethyLumiSet2(dats, parallel = parallel, oob = oob, n = n, to=tw)
 
     if (is.null(pdat)) {
