@@ -266,9 +266,10 @@ DataToNChannelSet2 <- function(
    parallel = F,
    protocol.data = F, 
    IDAT = TRUE, 
-   force = F
+   force = F,
+   custom_manifest = NULL
    ) {
-      epic = hm27 = hm450 = 0
+      epic = hm27 = hm450 = custm = 0
       qw <- unlist(lapply(mats, function(x) attr(x, "ChipType")))
       epic = sum(grepl("BeadChip 8x5", qw))
       message(paste(epic, "HumanMethylationEpic / Epicv2 samples found"))
@@ -276,6 +277,11 @@ DataToNChannelSet2 <- function(
       message(paste(hm450, "HumanMethylation450 samples found"))
       hm27 = sum(grepl("BeadChip 12x1", qw))
       message(paste(hm27, "HumanMethylation27 samples found"))
+          if(epic == 0 && hm27 == 0 && hm450 == 0) {                               # changed this
+           custm = sum(grepl("BeadChip", qw))
+      message(paste(custm, "Custom array samples found"))
+       }
+
       if (
          hm27 > 0 && hm450 > 0 | 
          hm27 > 0 && epic  > 0 | 
@@ -360,7 +366,11 @@ DataToNChannelSet2 <- function(
           }
 
           message("Determining chip type from IDAT protocolData...")
-          if (ChipType == "BeadChip 12x1") {
+          if (!is.null(custom_manifest)) {                                                           # changed this
+                annotation(obj) <- ".manifest"
+          } else if (ChipType == "BeadChip 8x5" && dim(obj)[1] > 1.1e+06) {
+             annotation(obj) = "IlluminaHumanMethylationEpicv2"      
+          } else if (ChipType == "BeadChip 12x1") {
              annotation(obj) = "IlluminaHumanMethylation27k"
           } else if (ChipType == "BeadChip 12x8") {
               annotation(obj) = "IlluminaHumanMethylation450k"
@@ -368,9 +378,7 @@ DataToNChannelSet2 <- function(
               annotation(obj) = "IlluminaHumanMethylationEpic"
           }
 
-          if (ChipType == "BeadChip 8x5" && dim(obj)[1] > 1.1e+06) {
-             annotation(obj) = "IlluminaHumanMethylationEpicv2"
-          }
+   
         }  
     return(obj)
 }  # }}}
