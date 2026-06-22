@@ -43,7 +43,7 @@ columnMatrix <- function(x, row.names = NULL) {
 ## arrays until the 450k is completely replaced by epic chips.
 getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epicv2", ".manifest")#,
     #genome = c("hg19", "hg18", "hg38"))
-    ){
+    ){   
     #### genomic annotation package
     #genome <- match.arg(genome)  ## default to FDb.InfiniumMethylation.hg19
     #pkg <- paste0("FDb.InfiniumMethylation.", genome)
@@ -107,7 +107,8 @@ getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epic
             r <- return(r[[design]])
         }
     } , .manifest = function(design = NULL, color = NULL, ...) {
-        cm <- get("custom_manifest", envir = asNamespace("wateRmelon"))
+            cm <- getOption("wateRmelon.custom_manifest")
+            if(is.null(cm)) stop("No custom manifest found. Please provide custom_manifest to iadd()")            
             typeI  <- cm[cm$Infinium_Design_Type == "I", ]
             typeII <- cm[cm$Infinium_Design_Type == "II", ]
             
@@ -155,7 +156,7 @@ getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epic
         data(epicV2.controls)
         return(epicV2.controls)
     }, .manifest = function(){
-         cm <- get("custom_manifest", envir = asNamespace("wateRmelon"))
+         cm <- getOption("wateRmelon.custom_manifest")
             ctrls <- cm[cm$Probe_Type == "", ]
             data.frame(
                 Address       = ctrls$U,
@@ -180,7 +181,7 @@ getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epic
         ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO")
         return(epicV2.ordering[, ord])
     }, .manifest = function(){ 
-cm <- get("custom_manifest", envir = asNamespace("wateRmelon"))
+cm <- getOption("wateRmelon.custom_manifest")
             typeI  <- cm[cm$Infinium_Design_Type == "I", ]
             typeII <- cm[cm$Infinium_Design_Type == "II", ]
             rbind(
@@ -266,8 +267,7 @@ DataToNChannelSet2 <- function(
    parallel = F,
    protocol.data = F, 
    IDAT = TRUE, 
-   force = F,
-   custom_manifest = NULL
+   force = F
    ) {
       epic = hm27 = hm450 = custm = 0
       qw <- unlist(lapply(mats, function(x) attr(x, "ChipType")))
@@ -366,8 +366,8 @@ DataToNChannelSet2 <- function(
           }
 
           message("Determining chip type from IDAT protocolData...")
-          if (!is.null(custom_manifest)) {                                                           # changed this
-                annotation(obj) <- ".manifest"
+          if (!is.null(getOption("wateRmelon.custom_manifest"))) {
+            annotation(obj) <- ".manifest"
           } else if (ChipType == "BeadChip 8x5" && dim(obj)[1] > 1.1e+06) {
              annotation(obj) = "IlluminaHumanMethylationEpicv2"      
           } else if (ChipType == "BeadChip 12x1") {
@@ -738,7 +738,7 @@ NChannelSetToMethyLumiSet2 <- function(
 
 # {{{ methylumIDATepic
 methylumIDATepic <- function(barcodes = NULL, pdat = NULL, parallel = F, n = F, n.sd = F,
-    oob = T, idatPath = getwd(), force = F, tw=TRUE, custom_manifest = NULL, ...) {
+    oob = T, idatPath = getwd(), force = F, tw=TRUE, ...) {
     if (is(barcodes, "data.frame"))
         pdat = barcodes
     if ((is.null(barcodes)) & (is.null(pdat) | (!("barcode" %in% names(pdat)))))
@@ -780,7 +780,7 @@ methylumIDATepic <- function(barcodes = NULL, pdat = NULL, parallel = F, n = F, 
     stopifnot(all(files.present)) 
 
     mats <- IDATsToMatrices2(barcodes, parallel = parallel, idatPath = idatPath)
-    dats <- DataToNChannelSet2(mats, IDAT = T, parallel = parallel, force = force, custom_manifest = custom_manifest)
+    dats <- DataToNChannelSet2(mats, IDAT = T, parallel = parallel, force = force)
     mlumi <- NChannelSetToMethyLumiSet2(dats, parallel = parallel, oob = oob, n = n, to=tw)
 
     if (is.null(pdat)) {
