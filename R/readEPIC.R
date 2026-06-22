@@ -709,12 +709,13 @@ NChannelSetToMethyLumiSet2 <- function(
     # The only way to feasibly clean up this section would be to outsource the
     # possible metadatas to another script.
     fData(x.lumi) <- fdat
-    possibleLabels <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "PROBE_TYPE", "SNP10",
+    possibleLabels <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO", "PROBE_TYPE", "SNP10",
         "SYMBOL", "CHR36", "CPG36", "CPGS")
     fvarLabels(x.lumi) <- possibleLabels[1:ncol(fdat)]
     possibleMetadata <- c("Illumina probe ID from manifest", "Infinium design type (I or II)",
-        "Color channel (for type I probes)", "Probe locus type (CpG, CpH, or SNP)",
-        "SNP (dbSNP build 128) within 10bp of target?", "Gene symbol (if probe is annotated to a gene)",
+        "Color channel (for type I probes)", "Chromosome", "Genomic coordinates",
+        "Probe locus type (CpG, CpH, or SNP)", "SNP (dbSNP build 128) within 10bp of target?",
+        "Gene symbol (if probe is annotated to a gene)",
         "Chromosome mapping for probe in hg18 assembly", "Coordinates of interrogated cytosine in hg18",
         "Number of CpG dinucleotides in probe sequence")
     # something happens to readPepo betas after this point
