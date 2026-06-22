@@ -839,15 +839,15 @@ generateManifest <- function(anno = c("450k", "EPIC", "EPICv2", ".manifest")) { 
     )
     if (anno == "alreadyCooked") {man <- .manifest} else
     {man <- getAnnotationObject(anno)}
-    x <- getAnnotation(man)[, c("Name", "AddressB", "AddressA", "Type", "Color")]
+    x <- getAnnotation(man)[, c("Name", "AddressB", "AddressA", "Type", "Color", "chr", "pos")]
     # Name = Name AddressB = M AddressA = U Type = DESIGN Color = COLOR_CHANNEL
     # Generate manifest.
     snpI  <- getProbeInfo(man, type = "SnpI" )[, c(1, 2, 3, 4)]
     snpII <- getProbeInfo(man, type = "SnpII")[, c(1, 2)]
     snpI  <- cbind(snpI[, c("Name", "AddressB", "AddressA")], rep("I", nrow(snpI)),
-        snpI[, "Color"])
+        snpI[, "Color"], NA, NA)
     snpII <- cbind(snpII[, "Name"], rep("", nrow(snpII)), snpII[, "AddressA"], rep("II",
-        nrow(snpII)), rep("", nrow(snpII)))
+        nrow(snpII)), rep("", nrow(snpII)), NA, NA)
     colnames(snpI) <- colnames(snpII) <- colnames(x)
     x1 <- rbind(data.frame(x, stringsAsFactors = F), data.frame(snpI, stringsAsFactors = F),
         data.frame(snpII, stringsAsFactors = F))
@@ -856,7 +856,7 @@ generateManifest <- function(anno = c("450k", "EPIC", "EPICv2", ".manifest")) { 
     x1$col  [x1$Color == "Red"] <- "R"
     x1$col  [x1$Color == "Grn"] <- "G"
     is.na(x1$col) <- x1$Color == "Both"
-    colnames(x1) <- c("Probe_ID", "M", "U", "DESIGN", "COLOR_CHANNEL", "col")
+    colnames(x1) <- c("Probe_ID", "M", "U", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO", "col")
     x1$COLOR_CHANNEL <- factor(x1$COLOR_CHANNEL)
     x1$col <- factor(x1$col)
     return(x1)
