@@ -41,12 +41,13 @@ columnMatrix <- function(x, row.names = NULL) {
 ## require()s the appropriate package for annotating a chip & sets up mappings
 ## Potentially may temporarily require more indepth ordering file for 450k
 ## arrays until the 450k is completely replaced by epic chips.
-getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epicv2", ".manifest"),
-    genome = c("hg19", "hg18", "hg38")) {
+getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epicv2", ".manifest")#,
+    #genome = c("hg19", "hg18", "hg38"))
+    ){   
     #### genomic annotation package
-    genome <- match.arg(genome)  ## default to FDb.InfiniumMethylation.hg19
-    pkg <- paste0("FDb.InfiniumMethylation.", genome)
-    require(pkg, character.only = TRUE)  
+    #genome <- match.arg(genome)  ## default to FDb.InfiniumMethylation.hg19
+    #pkg <- paste0("FDb.InfiniumMethylation.", genome)
+    #require(pkg, character.only = TRUE)  
     ####  I think we can now do away with this
 
     chipType <- sub("^IlluminaHumanMethylation", "", chipType)
@@ -106,21 +107,31 @@ getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epic
             r <- return(r[[design]])
         }
     } , .manifest = function(design = NULL, color = NULL, ...) {
-        # data(epic.ordering)
-        # epicV2.ordering <<- generateManifest("EPICv2")
-        what <- c("Probe_ID", "M", "U")
-        #r <- split(epicV2.ordering[, c(what, "col")], epicV2.ordering$DESIGN)
-        r <- list()
-        #r$I <- split(r$I[, what], r$I$col)
-        I <- data.frame(.manifest@data$TypeI)
-        nI <- colnames(I)
-        nI[1:3] <- c("Probe_ID", "U", "M")
-        colnames(I) <- nI
-        r$I <- split(I[,what], I$Color)
-        names(r$I)<-  c('G','R')
-
-        r$II <- data.frame(.manifest@data$TypeII) 
-        colnames(r$II)[c(1,2)] <- nI[c(1,2)]
+            cm <- getOption("wateRmelon.custom_manifest")
+            if(is.null(cm)) stop("No custom manifest found. Please provide custom_manifest to iadd()")            
+            typeI  <- cm[cm$Infinium_Design_Type == "I", ]
+            typeII <- cm[cm$Infinium_Design_Type == "II", ]
+            
+            r <- list()
+            r$I <- list(
+                G = data.frame(
+                    Probe_ID = typeI[typeI$col == "G", "Probe_ID"],
+                    M        = typeI[typeI$col == "G", "M"],
+                    U        = typeI[typeI$col == "G", "U"],
+                    stringsAsFactors = FALSE
+                ),
+                R = data.frame(
+                    Probe_ID = typeI[typeI$col == "R", "Probe_ID"],
+                    M        = typeI[typeI$col == "R", "M"],
+                    U        = typeI[typeI$col == "R", "U"],
+                    stringsAsFactors = FALSE
+                )
+            )
+            r$II <- data.frame(
+                Probe_ID = typeII$Probe_ID,
+                U        = typeII$U,
+                stringsAsFactors = FALSE
+            )
 
         if (is.null(design)) {
             r <- return(r)
@@ -145,37 +156,52 @@ getMethylationBeadMappers2 <- function(chipType = c("450k", "27k", "Epic", "Epic
         data(epicV2.controls)
         return(epicV2.controls)
     }, .manifest = function(){
-       kont <- data.frame(.manifest@data$TypeControl)
-       colnames(kont) <- c("Address", "Type", "Color_Channel", "Name") 
-       kont
+         cm <- getOption("wateRmelon.custom_manifest")
+            ctrls <- cm[cm$Probe_Type == "", ]
+            data.frame(
+                Address       = ctrls$U,
+                Type          = ctrls$Type,
+                Color_Channel = ctrls$COLOR_CHANNEL,
+                Name          = ctrls$Name,
+                stringsAsFactors = FALSE
+            )
     }
     )
     ## we may be able to eliminate ordering <<no, this is the fData 
     getOrdering <- switch(chipType, `27k` = function() {
-        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL")
+        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO")
         return(hm27.ordering[, ord])
     }, `450k` = function() {
-        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL")
+        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO")
         return(hm450.ordering[, ord])
     }, Epic = function() {
-        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL")
+        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO")
         return(epic.ordering[, ord])
     }, Epicv2 = function() {
-        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL")
+        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO")
         return(epicV2.ordering[, ord])
     }, .manifest = function(){ 
-        ord <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL")
-        man1 <- data.frame( 
-           Probe_ID = .manifest@data$TypeI$Name, 
-           DESIGN   = 'I',
-           COLOR_CHANNEL = .manifest@data$TypeI$Color
-        )
-        man2 <- data.frame( 
-           Probe_ID = .manifest@data$TypeII$Name, 
-           DESIGN   = 'II',
-           COLOR_CHANNEL = ''
-        )
-        rbind(man1,man2)
+cm <- getOption("wateRmelon.custom_manifest")
+            typeI  <- cm[cm$Infinium_Design_Type == "I", ]
+            typeII <- cm[cm$Infinium_Design_Type == "II", ]
+            rbind(
+                data.frame(
+                    Probe_ID      = typeI$Probe_ID,
+                    DESIGN        = "I",
+                    COLOR_CHANNEL = typeI$col,
+                    CHR           = typeI$CHR,
+                    MAPINFO       = typeI$MAPINFO,
+                    stringsAsFactors = FALSE
+                ),
+                data.frame(
+                    Probe_ID      = typeII$Probe_ID,
+                    DESIGN        = "II",
+                    COLOR_CHANNEL = "",
+                    CHR           = typeII$CHR,
+                    MAPINFO       = typeII$MAPINFO,
+                    stringsAsFactors = FALSE
+                )
+            )
     }
 
     )
@@ -243,7 +269,7 @@ DataToNChannelSet2 <- function(
    IDAT = TRUE, 
    force = F
    ) {
-      epic = hm27 = hm450 = 0
+      epic = hm27 = hm450 = custm = 0
       qw <- unlist(lapply(mats, function(x) attr(x, "ChipType")))
       epic = sum(grepl("BeadChip 8x5", qw))
       message(paste(epic, "HumanMethylationEpic / Epicv2 samples found"))
@@ -251,6 +277,11 @@ DataToNChannelSet2 <- function(
       message(paste(hm450, "HumanMethylation450 samples found"))
       hm27 = sum(grepl("BeadChip 12x1", qw))
       message(paste(hm27, "HumanMethylation27 samples found"))
+          if(epic == 0 && hm27 == 0 && hm450 == 0) {                               # changed this
+           custm = sum(grepl("BeadChip", qw))
+      message(paste(custm, "Custom array samples found"))
+       }
+
       if (
          hm27 > 0 && hm450 > 0 | 
          hm27 > 0 && epic  > 0 | 
@@ -335,7 +366,11 @@ DataToNChannelSet2 <- function(
           }
 
           message("Determining chip type from IDAT protocolData...")
-          if (ChipType == "BeadChip 12x1") {
+          if (!is.null(getOption("wateRmelon.custom_manifest"))) {
+            annotation(obj) <- ".manifest"
+          } else if (ChipType == "BeadChip 8x5" && dim(obj)[1] > 1.1e+06) {
+             annotation(obj) = "IlluminaHumanMethylationEpicv2"      
+          } else if (ChipType == "BeadChip 12x1") {
              annotation(obj) = "IlluminaHumanMethylation27k"
           } else if (ChipType == "BeadChip 12x8") {
               annotation(obj) = "IlluminaHumanMethylation450k"
@@ -343,9 +378,7 @@ DataToNChannelSet2 <- function(
               annotation(obj) = "IlluminaHumanMethylationEpic"
           }
 
-          if (ChipType == "BeadChip 8x5" && dim(obj)[1] > 1.1e+06) {
-             annotation(obj) = "IlluminaHumanMethylationEpicv2"
-          }
+   
         }  
     return(obj)
 }  # }}}
@@ -676,12 +709,13 @@ NChannelSetToMethyLumiSet2 <- function(
     # The only way to feasibly clean up this section would be to outsource the
     # possible metadatas to another script.
     fData(x.lumi) <- fdat
-    possibleLabels <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "PROBE_TYPE", "SNP10",
+    possibleLabels <- c("Probe_ID", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO", "PROBE_TYPE", "SNP10",
         "SYMBOL", "CHR36", "CPG36", "CPGS")
     fvarLabels(x.lumi) <- possibleLabels[1:ncol(fdat)]
     possibleMetadata <- c("Illumina probe ID from manifest", "Infinium design type (I or II)",
-        "Color channel (for type I probes)", "Probe locus type (CpG, CpH, or SNP)",
-        "SNP (dbSNP build 128) within 10bp of target?", "Gene symbol (if probe is annotated to a gene)",
+        "Color channel (for type I probes)", "Chromosome", "Genomic coordinates",
+        "Probe locus type (CpG, CpH, or SNP)", "SNP (dbSNP build 128) within 10bp of target?",
+        "Gene symbol (if probe is annotated to a gene)",
         "Chromosome mapping for probe in hg18 assembly", "Coordinates of interrogated cytosine in hg18",
         "Number of CpG dinucleotides in probe sequence")
     # something happens to readPepo betas after this point
@@ -806,15 +840,15 @@ generateManifest <- function(anno = c("450k", "EPIC", "EPICv2", ".manifest")) { 
     )
     if (anno == "alreadyCooked") {man <- .manifest} else
     {man <- getAnnotationObject(anno)}
-    x <- getAnnotation(man)[, c("Name", "AddressB", "AddressA", "Type", "Color")]
+    x <- getAnnotation(man)[, c("Name", "AddressB", "AddressA", "Type", "Color", "chr", "pos")]
     # Name = Name AddressB = M AddressA = U Type = DESIGN Color = COLOR_CHANNEL
     # Generate manifest.
     snpI  <- getProbeInfo(man, type = "SnpI" )[, c(1, 2, 3, 4)]
     snpII <- getProbeInfo(man, type = "SnpII")[, c(1, 2)]
     snpI  <- cbind(snpI[, c("Name", "AddressB", "AddressA")], rep("I", nrow(snpI)),
-        snpI[, "Color"])
+        snpI[, "Color"], NA, NA)
     snpII <- cbind(snpII[, "Name"], rep("", nrow(snpII)), snpII[, "AddressA"], rep("II",
-        nrow(snpII)), rep("", nrow(snpII)))
+        nrow(snpII)), rep("", nrow(snpII)), NA, NA)
     colnames(snpI) <- colnames(snpII) <- colnames(x)
     x1 <- rbind(data.frame(x, stringsAsFactors = F), data.frame(snpI, stringsAsFactors = F),
         data.frame(snpII, stringsAsFactors = F))
@@ -823,7 +857,7 @@ generateManifest <- function(anno = c("450k", "EPIC", "EPICv2", ".manifest")) { 
     x1$col  [x1$Color == "Red"] <- "R"
     x1$col  [x1$Color == "Grn"] <- "G"
     is.na(x1$col) <- x1$Color == "Both"
-    colnames(x1) <- c("Probe_ID", "M", "U", "DESIGN", "COLOR_CHANNEL", "col")
+    colnames(x1) <- c("Probe_ID", "M", "U", "DESIGN", "COLOR_CHANNEL", "CHR", "MAPINFO", "col")
     x1$COLOR_CHANNEL <- factor(x1$COLOR_CHANNEL)
     x1$col <- factor(x1$col)
     return(x1)
