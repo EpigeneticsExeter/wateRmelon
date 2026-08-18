@@ -8,27 +8,17 @@
 | _Platforms:_  | _Multiple_          | _Multiple_    |
 | R CMD check   | <a href="http://bioconductor.org/checkResults/release/bioc-LATEST/wateRmelon/"><img border="0" src="http://bioconductor.org/shields/build/release/bioc/wateRmelon.svg" alt="Build status"></a></br>|<a href="http://bioconductor.org/checkResults/devel/bioc-LATEST/wateRmelon/"><img border="0" src="http://bioconductor.org/shields/build/devel/bioc/wateRmelon.svg" alt="Build status"></a>
 
-Currently on Github I'm doing some maintenance, in particular in order to work with EPICv2 arrays.
-If you install:
-
-   https://github.com/jokergoo/IlluminaHumanMethylationEPICv2anno.20a1.hg38
-
-and
-
-  https://github.com/jokergoo/IlluminaHumanMethylationEPICv2manifest
-
-....  as well as this version of wateRmelon, you can read in EPICv2 array IDAT files with wateRmelon and bigmelon.
-
-Most functions including dasen and the other Pidsley et al 2013 normalisers, genki, dmrse,
- and agep work at least in wateRmelon but have only been superficially tested, additional testingand improvement is underway.  Bug reports are welcome at lschal@essex.ac.uk or via github.
+## Installation
+We are currently updating `wateRmelon` and our wider ecosystem of software including `bigmelon`. We will try to keep the github repo inline with the bioconductor mirror as much as possible. However if you want the latest features before they are committed to bioconductor you can install both `wateRmelon` using the code below. 
 
 
-## 1. Installation
 
-
-**Install from Github**
-```R
-## Make sure 'devtools' is installed in your R
-# install.packages("devtools")
-devtools::install_github("schalkwyk/wateRmelon")
 ```
+library(devtools)
+devtools::install_git('https://github.com/EpigeneticsExeter/wateRmelon')
+```
+
+## Citation
+If you use `watermelon` for your analyses, please use citation() within R or cite [the original manuscript describing the methods](https://doi.org/10.1186/1471-2164-14-293) as:
+
+Pidsley R, Y Wong CC, Volta M, Lunnon K, Mill J, Schalkwyk LC. A data-driven approach to preprocessing Illumina 450K methylation array data. BMC Genomics. 2013;14:293. Published 2013 May 1. doi:10.1186/1471-2164-14-293
